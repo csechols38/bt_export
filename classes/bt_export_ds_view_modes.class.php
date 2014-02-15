@@ -53,36 +53,35 @@ class BtExportDsViewModes extends BtImportContentType{
 		if(!empty($view_modes)){
 			foreach($view_modes as $view_mode_name => $values){
 				foreach($values as $bundle => $bundle_values){
-					foreach($bundle_values as $ds_type => $ds_type_values){
-						
-						$this->AddViewMode($bundle, $view_mode_name);
-						
-						$id = 'node' . '|' . $bundle . '|' . $view_mode_name;
-						$ds_settings = array(
-							'id' => $id,
-							'entity_type' => 'node',
-							'bundle' => $bundle,
-							'view_mode' => $view_mode_name,
-						);
-						switch($ds_type){
-						case 'layout_settings':
-							$ds_settings['layout'] = $ds_type_values['layout'];
-							$ds_settings['settings'] = serialize($ds_type_values['settings']);
-							$table = 'ds_layout_settings';
-							break;
-						case 'field_settings':
-							$ds_settings['settings'] = serialize($ds_type_values);
-							$table = 'ds_field_settings';
-							break;
-						case 'field_groups':
-							$this->field_groups[$view_mode_name][$bundle] = $ds_type_values;
-							break;
-						}
-						$exists = $this->checkExistingDsLayout($id, $bundle, $table);
-						if(empty($exists)){
-							$insert = $this->importDsLayout($ds_settings, $table);
-						}else{
-							$update = $this->importUpdateDsLayout($ds_settings, $table);
+					if(node_type_load($bundle)){
+						foreach($bundle_values as $ds_type => $ds_type_values){
+							$id = 'node' . '|' . $bundle . '|' . $view_mode_name;
+							$ds_settings = array(
+								'id' => $id,
+								'entity_type' => 'node',
+								'bundle' => $bundle,
+								'view_mode' => $view_mode_name,
+							);
+							switch($ds_type){
+							case 'layout_settings':
+								$ds_settings['layout'] = $ds_type_values['layout'];
+								$ds_settings['settings'] = serialize($ds_type_values['settings']);
+								$table = 'ds_layout_settings';
+								break;
+							case 'field_settings':
+								$ds_settings['settings'] = serialize($ds_type_values);
+								$table = 'ds_field_settings';
+								break;
+							case 'field_groups':
+								$this->field_groups[$view_mode_name][$bundle] = $ds_type_values;
+								break;
+							}
+							$exists = $this->checkExistingDsLayout($id, $bundle, $table);
+							if(empty($exists)){
+								$insert = $this->importDsLayout($ds_settings, $table);
+							}else{
+								$update = $this->importUpdateDsLayout($ds_settings, $table);
+							}
 						}
 					}
 				}
@@ -125,12 +124,15 @@ class BtExportDsViewModes extends BtImportContentType{
 				}
 			}
 		}
+	}
+
+	
+	
+	public function cleanUp(){
 		$this->dsCleanUp();
 	}
 
-
-
-	public function dsCleanUp(){
+	protected function dsCleanUp(){
 		$results = $this->results;
 		$result = '';
 		$result .= '<div>Updated '.$results['ds_updates'].' Display Suite layouts.</div>';

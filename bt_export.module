@@ -66,6 +66,7 @@ function bt_export_import($code) {
 			case 'advanced_ds':
 				$ds_view_modes = new BtExportDsViewModes();
 				$ds_view_modes->importDsNodeViewModes($code->advanced_ds);
+				$ds_view_modes->cleanUp();
 				break;
 			}
 		}
@@ -87,6 +88,17 @@ function _bt_export_validate($form, &$form_state){
 	if($form_state['triggering_element']['#value'] == 'Import'){
 		if(empty($form_state['values']['import']['value'])){
 			form_set_error('import', 'Code Cannot be empty');
+		}
+	}
+	if($form_state['values']['export_content_type'] == '_none'){
+		$error = TRUE;
+		foreach($form_state['values']['export_types'] as $type => $value){
+			if(!empty($value)){
+				$error = FALSE;
+			}
+		}
+		if($error){
+			form_set_error('export_types', 'Must Select Export Components');
 		}
 	}
 }

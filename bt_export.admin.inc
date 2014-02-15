@@ -128,7 +128,6 @@ function _bt_export_form($form, &$form_state){
 		'#type' => 'checkboxes',
 		'#options' => $export_components,
 		'#required' => TRUE,
-		'#default_value' => array_keys($export_components),
 		'#multiple' => TRUE,
 	);
 	
@@ -148,8 +147,6 @@ function _bt_export_form($form, &$form_state){
 			'#title' => t('Field Group Types'),
 			'#type' => 'checkboxes',
 			'#options' => $field_group_options,
-			'#required' => TRUE,
-			'#default_value' => array_keys($field_group_options),
 			'#multiple' => TRUE,
 			'#states' => array(
 				'visible' => array(   // action to take.
