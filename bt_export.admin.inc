@@ -127,7 +127,6 @@ function _bt_export_form($form, &$form_state){
 		'#title' => t('Export components'),
 		'#type' => 'checkboxes',
 		'#options' => $export_components,
-		'#required' => TRUE,
 		'#multiple' => TRUE,
 	);
 	
