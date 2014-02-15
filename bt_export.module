@@ -90,7 +90,7 @@ function _bt_export_validate($form, &$form_state){
 			form_set_error('import', 'Code Cannot be empty');
 		}
 	}
-	if($form_state['values']['export_content_type'] == '_none'){
+	if($form_state['values']['export_content_type'] != '_none'){
 		$error = TRUE;
 		foreach($form_state['values']['export_types'] as $type => $value){
 			if(!empty($value)){
@@ -364,15 +364,21 @@ function _bt_export_content_type(&$form_state, &$export){
 function _bt_export_node_view_modes($modes = array(), &$export){
 	$view_modes = array();
 	$ds_view_modes = new StdClass();
+	$extract = FALSE;
 	foreach($modes as $name => $value){
 		if(!empty($value)){
 			$view_modes[$name] = TRUE;
+			$extract = TRUE;
 		}
 	}
-	$bundle_type = node_type_get_types();
-	$bundle_type = array_keys($bundle_type);
-	$view_mode_settings = new BtExportDsViewModes();
-	$view_mode_settings->exportViewModes($view_modes, $bundle_type, $export);
+	if($extract){
+		$bundle_type = node_type_get_types();
+		$bundle_type = array_keys($bundle_type);
+		$view_mode_settings = new BtExportDsViewModes();
+		$view_mode_settings->exportViewModes($view_modes, $bundle_type, $export);
+	}else{
+		unset($export->components['advanced_ds']);
+	}
 }
 
 
