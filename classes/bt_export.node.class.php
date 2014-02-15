@@ -18,12 +18,21 @@ class BtImportContentType{
 		'field_instances' => 0,
 		'ds_updates' => 0,
 		'ds_settings' => 0,
-		'new_form_groups' => 0,
-		'new_ds_groups' => 0,
+		'field_groups' => 0,
+		'view_modes' => 0,
+	);
+	public $chanel = array(
+		'ds' => '',
+		'bundle' => '',
+		'field' => '',
+		'taxonomy' => '',
 	);
 
 	//construct
 	public function __construct($node){
+		module_load_include('class.php', 'bt_export', 'classes/bt_export_ds_view_modes');
+		$this->chaneLog = new btExportChanelog();
+		$this->chaneLog->updateChanelog('test', array());
 		$this->node = $node->content_type;
 		$import_types = new StdClass();
 		$this->import_types = &$import_types;
@@ -65,11 +74,13 @@ class BtImportContentType{
 					//save the content type
 					node_type_save($this->node_settings);
 					$this->results['content_type']++;
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'field_group', $this->node_settings->name, 'updated');
 				}
 			}
 		}
 		return $this->node_settings;
 	}
+	
 
 
 	//function for importing the display suite view modes
@@ -85,9 +96,14 @@ class BtImportContentType{
 					$bundle_settings['view_modes']['default']['custom_settings'] = FALSE;
 					// Save updated bundle settings.
 					$save = field_bundle_settings('node', $bundle, $bundle_settings);
+					$this->results['view_modes']++;
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'created');	
+				}else{
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'uptodate');
 				}
 				foreach($settings as $setting_type => $setting_values){
 					if(!empty($settings)){
+						$table = '';
 						$id = 'node' . '|' . $bundle . '|' . $view_mode;
 						$ds_settings = array(
 							'id' => $id,
@@ -155,19 +171,41 @@ if(is_array($fields)){
 		->condition('bundle', $field_values['bundle'], '=')
 		->execute();
 		if($update){
+			$result = 'updated';
 			$this->results['ds_updates']++;
+		}else{
+			$result = 'upto_data';
 		}
+		switch($table){
+				case 'ds_layout_setting':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_layout_settings', $field_values['view_mode'], $result);
+				break;
+				case 'ds_field_setting':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_field_settings', $field_values['view_mode'], $result);
+				break;
+			}
 	}
 
-	//function for checking if a ds layout eists in the database
+	//function for inserting layout and field settings into database
 	public function importDsLayout($field_values, $table){
 		$insert = db_insert($table)
 		->fields($field_values)
 		->execute();
-		if(isset($insert)){
+		if($insert){
+			$result = 'updated';
 			$this->results['ds_settings']++;
+		}else{
+			$result = 'failed';
 		}
-		return $insert;
+		switch($table){
+				case 'ds_layout_setting':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_layout_settings', $field_values['view_mode'], $result);
+				break;
+				case 'ds_field_setting':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_field_settings', $field_values['view_mode'], $result);
+				break;
+			}
+			return $insert;
 	}
 
 
@@ -203,7 +241,8 @@ if(is_array($fields)){
 							$form_field_group_values->export_type = NULL;
 							//save the field groups
 							field_group_group_save($form_field_group_values);
-							$this->results['new_form_groups']++;
+							$this->results['field_groups']++;
+							$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'field_groups', 'For Form '. $form_field_group_name, 'created');
 						}
 					}
 					break;
@@ -219,7 +258,8 @@ if(is_array($fields)){
 									$ds_field_group_values->export_type = NULL;
 									//save the field groups
 									field_group_group_save($ds_field_group_values);
-									$this->results['new_ds_groups']++;
+									$this->results['field_groups']++;
+									$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'field_groups', 'For DS '. $ds_field_group_name, 'created');
 								}
 							}
 						}
@@ -253,6 +293,7 @@ if(is_array($fields)){
 						//create the field instance
 						field_create_instance($field_instance);
 						$this->results['field_instances']++;
+						$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'field_instances', $field_name, 'updated');
 					}
 					//if the field doesnt exist create it
 				} else {
@@ -268,8 +309,8 @@ if(is_array($fields)){
 					);
 					$create_field = field_create_field($field);
 					$create_instance = field_create_instance($field_instance);
-					$this->results['field_instances']++;
 					$this->results['new_fields']++;
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'field_new', $field_name, 'created');
 				}
 			}
 		}
@@ -277,16 +318,17 @@ if(is_array($fields)){
 
 	//clean up function to return results
 	public function cleanUp(){
+		$this->chaneLog->cleanUp();
 		$results = $this->results;
 		$result = '<div>';
 		$path = l($this->node_settings->name, '../../admin/structure/types/manage/'. $this->node_settings->type .'', array());
 		$result .= '<div>Created '.$results['content_type'].' new Content Types(s). Click '. $path .' to view it.</div>';
 		$result .= '<div>Created '.$results['new_fields'].' new Fields.</div>';
 		$result .= '<div>Updated '.$results['field_instances'].' Field Instances.</div>';
+		$result .= '<div>Created '.$results['view_modes'].' new view modes.</div>';
 		$result .= '<div>Updated '.$results['ds_updates'].' Display Suite layouts.</div>';
 		$result .= '<div>Created '.$results['ds_settings'].' new Display Suite Layouts and Field Settings.</div>';
-		$result .= '<div>Created '.$results['new_form_groups'].' new Form Field Groups.</div>';
-		$result .= '<div>Created '.$results['new_ds_groups'].' new Display Suite Field Groups.</div>';
+		$result .= '<div>Created '.$results['field_groups'].' new Field Groups.</div>';
 		$result .= '</div>';
 		drupal_set_message($result);
 		return ;

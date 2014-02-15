@@ -10,7 +10,7 @@ class BtExportDsViewModes extends BtImportContentType{
 
 
 	public function __construct(){
-
+		$this->chaneLog = new btExportChanelog();
 	}
 
 	public function listViewModes(){
@@ -54,6 +54,7 @@ class BtExportDsViewModes extends BtImportContentType{
 			foreach($view_modes as $view_mode_name => $values){
 				foreach($values as $bundle => $bundle_values){
 					if(node_type_load($bundle)){
+						$this->AddViewMode($bundle, $view_mode_name);
 						foreach($bundle_values as $ds_type => $ds_type_values){
 							$id = 'node' . '|' . $bundle . '|' . $view_mode_name;
 							$ds_settings = array(
@@ -117,7 +118,8 @@ class BtExportDsViewModes extends BtImportContentType{
 								$values->export_type = NULL;
 								//save the field groups
 								field_group_group_save($values);
-								$this->results['new_ds_groups']++;
+								$this->results['field_groups']++;
+								$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle_name, 'field_groups', $field_group_name);
 							}
 						}
 					}
@@ -130,6 +132,7 @@ class BtExportDsViewModes extends BtImportContentType{
 	
 	public function cleanUp(){
 		$this->dsCleanUp();
+		$this->chaneLog->cleanUp();
 	}
 
 	protected function dsCleanUp(){
@@ -137,7 +140,8 @@ class BtExportDsViewModes extends BtImportContentType{
 		$result = '';
 		$result .= '<div>Updated '.$results['ds_updates'].' Display Suite layouts.</div>';
 		$result .= '<div>Created '.$results['ds_settings'].' new Display Suite Layouts and Field Settings.</div>';
-		$result .= '<div>Created '.$results['new_ds_groups'].' new Display Suite Field Groups.</div>';
+		$result .= '<div>Created '.$results['field_groups'].' new Display Suite Field Groups.</div>';
+		$result .= '<div>Created '.$results['view_modes'].' new view modes.</div>';
 		drupal_set_message($result);
 	}
 }

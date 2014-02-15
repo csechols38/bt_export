@@ -7,3 +7,4 @@ files[] = bt_export.module
 files[] = classes/bt_export.node.class.php
 files[] = classes/bt_export.taxonomy.class.php
 files[] = classes/bt_export_ds_view_modes.class.php
+files[] = classes/bt_export_import_chanelog.class.php

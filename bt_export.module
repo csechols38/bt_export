@@ -90,7 +90,6 @@ function _bt_export_validate($form, &$form_state){
 			form_set_error('import', 'Code Cannot be empty');
 		}
 	}else{
-		dpm('here');
 		if($form_state['values']['export_content_type'] != '_none'){
 			$error = TRUE;
 			foreach($form_state['values']['export_types'] as $type => $value){
