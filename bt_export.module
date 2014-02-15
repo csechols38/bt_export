@@ -1,0 +1,387 @@
+<?php
+
+/**
+ * @file
+ * Blue Tree Export Functions
+ */
+
+
+
+/**
+ * @ implements hook_menu()
+ *
+ */
+function bt_export_menu(){
+	$items = array();
+	$items['admin/config/system/bt-export'] = array(
+		'title' => 'Import / Export Content Types',
+		'description' => 'Import / Export Content Types',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('_bt_export_form'),
+		'access arguments' => array('access bt_export configs'),
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'bt_export.admin.inc',
+	);
+	return $items;
+}
+
+
+/**
+ * Runs the import code through our class
+ * @param $code.
+ *  The unserialized code to import
+ */
+function bt_export_import($code) {
+	$results = NULL;
+	if(!empty($code->components)){
+		foreach($code->components as $component => $value){
+			switch($component){
+			case 'content_type':
+				//import object
+				$import = new BtImportContentType($code);
+				//check import settings
+				if($import->import_types->content_type){
+					//create the content type
+					$node_settings = $import->buildNode($import->node, TRUE);
+					//create the field and instances for our content type
+					$import->importNodeFields($import->node->field_properties, $node_settings);
+				}
+				//check to import field groups
+				if($import->import_types->field_group && _bt_export_export_components('field_group')){
+					//import field groups
+					$import->importFieldGroups();
+				}
+				//check to import ds settings
+				if($import->import_types->ds && _bt_export_export_components('ds')){
+					$import->importDsViewModes();
+				}
+				//our import results
+				$results = $import->cleanUp();
+				break;
+			case 'taxonomy':
+				$taxonomy = new BtTaxonomyImport($code->taxonomy_vocabularies);
+				$taxonomy->importTaxonomy();
+				$taxonomy->cleanUp();
+				break;
+			case 'advanced_ds':
+				$ds_view_modes = new BtExportDsViewModes();
+				$ds_view_modes->importDsNodeViewModes($code->advanced_ds);
+				break;
+			}
+		}
+	}
+
+	return $results;
+}
+
+
+
+
+/**
+ * @ import/export form mvalidation
+ *
+ */
+function _bt_export_validate($form, &$form_state){
+	//if importing check to see if the code field is empty
+	//if so, throw an error else continue
+	if($form_state['triggering_element']['#value'] == 'Import'){
+		if(empty($form_state['values']['import']['value'])){
+			form_set_error('import', 'Code Cannot be empty');
+		}
+	}
+}
+
+
+
+/**
+ * @ Our import / export for submit handler.
+ *
+ */
+function _bt_export_submit($form, &$form_state){
+	$export = new StdClass();
+	$export->trigger = $form_state['triggering_element']['#value'];
+	$export->components = array();
+	$run = FALSE;
+	switch($export->trigger){
+	case 'Export':
+		//exporting content types
+		if($form_state['values']['export_content_type'] != '_none'){
+			//content type data
+			_bt_export_content_type($form_state, $export);
+			$export->components['content_type'] = TRUE;
+		}
+		//ds view modes
+		if(!empty($form_state['values']['ds_view_modes'])){
+			$export->components['advanced_ds'] = TRUE;
+			_bt_export_node_view_modes($form_state['values']['ds_view_modes'], $export);
+			
+		}
+		//taxonomy vocablularies
+		if(!empty($form_state['values']['taxonomy_terms'])){
+			//requested vocabularies
+			$taxonomy_vocabularies = _bt_export_load_taxonomy_children($form_state['values']['taxonomy_terms']);
+			if(!empty($taxonomy_vocabularies)){
+				$export->taxonomy_vocabularies = $taxonomy_vocabularies;
+				$export->components['taxonomy'] = TRUE;
+			}
+		}
+		//if there is nothign to export just destroy the export object
+		if(!empty($export->components)){
+			//rebuild the form and searlize export code
+			$form_state['rebuild'] = TRUE;
+			//searialize our node object
+			$serialized = serialize($export);
+			//make our serialized code our code-textareas defautl value
+			$form_state['code'] = $serialized;
+		}else{
+			//set a message
+			drupal_set_message('Nothing to Import');
+		}
+		break;
+	case 'Import':
+		//the searialized code
+		$code = $form_state['values']['import']['value'];
+		//unsearliaze the code
+		$unserialized_node = unserialize($code);
+		$content_type = &$unserialized_node->content_type;
+		//the nodes title
+		if(!empty($form_state['values']['title'])){
+			//get the user entered content type
+			if(!empty($content_type->settings->name)){
+				$content_type->settings->name = $form_state['values']['title'];
+			}
+		}
+		//the nodes machine name
+		if(!empty($form_state['values']['machine_name'])){
+			if(!empty($content_type->settings)){
+				//get the user entered machin name
+				$content_type->settings->type = $form_state['values']['machine_name'];
+				//change the machine name
+				$content_type->settings->orig_type = strtolower($form_state['values']['machine_name']);
+			}
+		}
+		//import the content type
+		$import_code = bt_export_import($unserialized_node);
+		break;
+	}
+
+}
+
+
+/**
+ * Gets the form field groups
+ * @param $content_type
+ *   A content typ object
+ */
+function _bt_export_field_groups($content_type){
+	$field_groups = FALSE;
+	//only if the field_groups module exists
+	if(module_exists('field_group')){
+		//get the field groups
+		$field_groups = field_group_info_groups("node", $content_type->machine_name, 'form');
+	}
+	return $field_groups;
+}
+
+
+
+/**
+ * @param $single
+ *   a madule name
+ */
+function _bt_export_export_components($single = ''){
+	$components = array();
+	//content type
+	$components['content_type'] = t('Content Type Fields');
+	//field groups
+	if(module_exists('field_group')){
+		$components['field_group'] = t('Field Groups');
+	}
+	//display suit
+	if(module_exists('ds')){
+		$components['ds'] = t('Display Suite Layouts, Settings, View Modes');
+	}
+	//if only asking about one module
+	//only return that module
+	if($single){
+		$components = !empty($components[$single]) ? TRUE : FALSE;
+	}
+	return $components;
+}
+
+
+/**
+ * @param $bundle
+ *   content type bundle
+ * @param $field_groups
+ *   bool
+ *
+ * This function will return Display Suite fields groups or view modes
+ */
+function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
+	$ds_view_modes = new StdClass();
+	//get the view modes
+	$view_modes = ctools_export_crud_load_all('ds_view_modes');
+	//add in the "full" view mode
+	$view_modes['full'] = array();
+	$view_modes['full'] = new StdClass();
+	$view_modes['full']->view_mode = 'full';
+	//loop through the view modes and load view mode instances
+	foreach($view_modes as $values){
+		$ds_view_mode = ds_get_layout('node', $bundle, $values->view_mode);
+		if(!empty($ds_view_mode)){
+			switch($field_groups){
+			case TRUE:
+				$ds_view_modes->{$values->view_mode} = field_group_info_groups('node', $bundle, $values->view_mode);
+				break;
+			default:
+				//add the view mode instances to our return array
+				$ds_view_modes->{$values->view_mode} = new StdClass();
+				//set the display suit layout settings
+				$ds_view_modes->{$values->view_mode}->ds_layout_settings = $ds_view_mode;
+				//get the display suit field settings
+				$ds_field_settings = ds_get_field_settings('node', $bundle, $values->view_mode);
+				if(!empty($ds_field_settings)){
+					$ds_view_modes->{$values->view_mode}->ds_field_settings = $ds_field_settings;
+					//get our custom fields
+					$custom_fields = bt_export_extract_custom_fields('node', $ds_view_modes->{$values->view_mode}->ds_field_settings, $ds_view_modes->{$values->view_mode});
+				}
+				break;
+			}
+		}
+	}
+	return $ds_view_modes;
+}
+
+
+/**
+ * @param $type
+ *   vocabularies or terms
+ * @return $taxonomy_options
+ *   an array of taxonomy vocabularies or terms
+ */
+function bt_export_taxonomy_handler($type = 'vocabularies'){
+	switch($type){
+	case 'vocabularies':
+		$taxonomy_options = array();
+		$taxonomy_vocabularies = taxonomy_get_vocabularies();
+		foreach($taxonomy_vocabularies as $vid => $taxonomy_values){
+			$taxonomy_options[$vid] = $taxonomy_values->name;
+		}
+		return $taxonomy_options;
+		break;
+	}
+}
+
+
+
+//function for extracting display suite code fields
+function bt_export_extract_custom_fields($entity_type, $fields, &$export){
+	$custom_fields = array();
+	if(is_array($fields)){
+		$all_field = ds_get_fields($entity_type);
+		$custom_fields = array_intersect_assoc($all_field, $fields);
+		if(!empty($custom_fields)){
+			//$export->custom_fields = $custom_fields;
+		}
+	}
+}
+
+
+
+/**
+ * Main function after the export / import form has been submitted.
+ * Checks what value sare available and formates the code to run through our import class
+ *
+ */
+function _bt_export_content_type(&$form_state, &$export){
+	$export->content_type = new StdClass();
+	$content_type = &$export->content_type;
+	//machine name
+	$content_type->machine_name = $form_state['values']['export_content_type'];
+	//the content type settings
+	$content_type->settings = node_type_load($content_type->machine_name);
+	//export types
+	$content_type->export_components = $form_state['values']['export_types'];
+	//content type fields
+	if(isset($content_type->export_components['content_type'])){
+		//field instance properties
+		$content_type->instance_properties = field_info_instances("node", $content_type->machine_name);
+		//loop through all the field and get theire field settings
+		foreach($content_type->instance_properties as $field_name => &$field_values){
+			if(field_info_field($field_name)){
+				//load the field info settings
+				$field_info_values = field_info_field($field_name);
+				//set the bundle to the new bundle
+				$content_type->field_properties[$field_name] = $field_info_values;
+			}
+		}
+	}
+	//display suit compenent
+	if(isset($content_type->export_components['ds'])){
+		$content_type->ds = new stdClass();
+		//display suit view modes
+		$content_type->ds->view_modes = bt_export_ds_view_modes_export($content_type->machine_name);
+	}
+	//field group component
+	if(isset($content_type->export_components['field_group'])){
+		$content_type->field_groups = new StdClass();
+		//get our field group types
+		if(!empty($form_state['values']['export_field_groups_type'])){
+			foreach($form_state['values']['export_field_groups_type'] as $field_group_type => $field_group_value){
+				switch($field_group_type){
+					//form field groups
+				case 'form_field_groups':
+					//get the form field groups
+					$content_type->field_groups->form = _bt_export_field_groups($content_type);
+					break;
+					//ds field groups
+				case 'ds_field_groups':
+					//get the ds field groups
+					$content_type->field_groups->ds = bt_export_ds_view_modes_export($content_type->machine_name, TRUE);
+					break;
+				}
+			}
+		}
+	}
+}
+
+
+
+
+function _bt_export_node_view_modes($modes = array(), &$export){
+	$view_modes = array();
+	$ds_view_modes = new StdClass();
+	foreach($modes as $name => $value){
+		if(!empty($value)){
+			$view_modes[$name] = TRUE;
+		}
+	}
+	$bundle_type = node_type_get_types();
+	$bundle_type = array_keys($bundle_type);
+	$view_mode_settings = new BtExportDsViewModes();
+	$view_mode_settings->exportViewModes($view_modes, $bundle_type, $export);
+}
+
+
+
+
+/**
+ * @param $vocabularies
+ *   an array or taxonomy vocabularie term id's
+ * @return $tree
+ *   An array of taxonomy vocabularies and there children
+ */
+function _bt_export_load_taxonomy_children($vocabularies = array()){
+	$parent_vocabularies = taxonomy_vocabulary_get_names();
+	$tree = array();
+	foreach($parent_vocabularies as $machine_name => $vocabulary_data){
+		foreach($vocabularies as $vid => $value){
+			if(!empty($value) && $value == $vocabulary_data->vid){
+				$tree[$machine_name]['parent'] = $vocabulary_data;
+				$tree[$machine_name]['children'] = taxonomy_get_tree($vid, $parent = 0, $max_depth = NULL, $load_entities = FALSE);
+			}
+		}
+	}
+	return $tree;
+}

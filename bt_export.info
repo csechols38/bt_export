@@ -1,0 +1,9 @@
+name = Blue Tree Import / Export
+description = Export content types, display suite settings, ect between AAA sites.
+package = AAA
+core = 7.x
+configure = admin/config/bt_export
+files[] = bt_export.module
+files[] = classes/bt_export.node.class.php
+files[] = classes/bt_export.taxonomy.class.php
+files[] = classes/bt_export_ds_view_modes.class.php
