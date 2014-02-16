@@ -260,7 +260,9 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 				//set the display suit layout settings
 				$ds_view_modes->{$values->view_mode}->ds_layout_settings = $ds_view_mode;
 				//set the view mode label
-				$ds_view_modes->{$values->view_mode}->view_mode_properties = $view_modes[$values->view_mode];
+				if($values->view_mode != 'full'){
+					$ds_view_modes->{$values->view_mode}->view_mode_properties = $view_modes[$values->view_mode];
+				}
 				//get the display suit field settings
 				$ds_field_settings = ds_get_field_settings('node', $bundle, $values->view_mode);
 				if(!empty($ds_field_settings)){

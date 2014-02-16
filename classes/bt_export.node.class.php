@@ -75,7 +75,28 @@ class BtImportContentType{
 		}
 		return $this->node_settings;
 	}
-	
+
+
+	//function to save the view mode in the database
+	public function saveNodeViewMode($properties){
+		// Delete previous view_mode configuration (if any)
+		db_delete('ds_view_modes')
+		->condition('view_mode', $properties->view_mode)
+		->execute();
+		$new_view_mode = new StdClass;
+		$new_view_mode->view_mode = $properties->view_mode;
+		$new_view_mode->label = $properties->label;
+		$new_view_mode->entities = serialize($properties->entities);
+		//save the view mode to the database
+		/*
+if(drupal_write_record('ds_view_modes', $new_view_mode)){
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $properties->label, 'created');
+		}else{
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $properties->label, 'failed');
+		}
+*/
+	}
+
 
 
 	//function for importing the display suite view modes
@@ -85,30 +106,21 @@ class BtImportContentType{
 		if(is_object($info)){
 			foreach($info as $view_mode => $settings){
 				//save the view mode types
-				
+
 				//create the video mode if it doesnt exists
 				if(!empty($settings->view_mode_properties) && $view_mode != 'full'){
-					$new_view_mode = new StdClass;
-					$new_view_mode->view_mode = $view_mode;
-					$new_view_mode->label = $settings->view_mode_properties->label;
-					$new_view_mode->entities = serialize($settings->view_mode_properties->entities);
-					dpm($new_view_mode);
-					//save the view mode to the database
-					if(drupal_write_record('ds_view_modes', $new_view_mode)){
-						$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'created');	
-					}else{
-						$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'upto_date');
-					}
+					$this->saveNodeViewMode($settings->view_mode_properties);
+					unset($settings->view_mode_properties);
 				}
 
-				
+
 				$bundle_settings = field_bundle_settings('node', $bundle);
 				if(empty($bundle_settings['view_modes'][$view_mode]['custom_settings'])){
 					$bundle_settings['view_modes'][$view_mode]['custom_settings'] = TRUE;
 					// Save updated bundle settings.
 					$save = field_bundle_settings('node', $bundle, $bundle_settings);
 					$this->results['view_modes']++;
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'created');	
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'created');
 				}else{
 					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'upto_date');
 				}
@@ -188,13 +200,13 @@ if(is_array($fields)){
 			$result = 'upto_date';
 		}
 		switch($table){
-				case 'ds_layout_settings':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
-				break;
-				case 'ds_field_settings':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
-				break;
-			}
+		case 'ds_layout_settings':
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
+			break;
+		case 'ds_field_settings':
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
+			break;
+		}
 	}
 
 	//function for inserting layout and field settings into database
@@ -207,14 +219,14 @@ if(is_array($fields)){
 			$result = 'failed';
 		}
 		switch($table){
-				case 'ds_layout_settings':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
-				break;
-				case 'ds_field_settings':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
-				break;
-			}
-			return $insert;
+		case 'ds_layout_settings':
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
+			break;
+		case 'ds_field_settings':
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
+			break;
+		}
+		return $insert;
 	}
 
 
