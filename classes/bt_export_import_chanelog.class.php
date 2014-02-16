@@ -36,17 +36,23 @@ class btExportChanelog{
 					case 'view_mode':
 						$message = t('Updated View Mode @value', $value);
 					break;
-					case 'bundle':
-						$message = t('Updated Bundle @value', $value);
-					break;
 					case 'field_instances':
 						$message = t('Updated New Field Instance For @value', $value);
+					break;
+					case 'ds_layout_settings':
+						$message = t('Updated Display Suite Layout @value', $value);
+					break;
+					case 'ds_field_settings':
+						$message = t('Updated Display Suite Field Settings For Layout @value', $value);
+					break;
+					case 'bundle':
+						$message = t('Updated Bundle @value', $value);
 					break;
 				}
 			break;
 			case 'created':
 				switch($component){
-					case 'field_group':
+					case 'field_groups':
 						$message = t('Created Field Group @value', $value);
 					break;
 					case 'view_mode':
@@ -59,7 +65,10 @@ class btExportChanelog{
 						$message = t('Created New Display Suite Field Settings For Layout @value', $value);
 					break;
 					case 'field_new':
-						$message = t('Created New Field and Instance@value', $value);
+						$message = t('Created New Field and Instance @value', $value);
+					break;
+					case 'bundle':
+						$message = t('Created Bundle @value', $value);
 					break;
 				}
 			break;
@@ -73,18 +82,37 @@ class btExportChanelog{
 					break;
 				}
 			break;
+			case 'upto_date':
+				switch($component){
+					case 'ds_layout_settings':
+						$message = t('Display Suite Layout @value Already Up To Date', $value);
+					break;
+					case 'ds_field_settings':
+						$message = t('Display Suite Field Settings For @value Already Up To Date', $value);
+					break;
+					case 'view_mode':
+						$message = t('View Mode @value Already Up To Date', $value);
+					break;
+					case 'bundle':
+						$message = t('Bundle @value Already Exists', $value);
+					break;
+				}
+			break;
 		}
 		return $message;
 	}
 	
 	
 	public function chanelUpdateMessage($data = array()){
-		if(!$data['bundle'] == $this->last_bundle){
+		if($data['bundle'] != $this->last_bundle){
 			$this->chanelBundleWrapper($data['bundle']);
+			$this->last_bundle = $data['bundle'];
 		}
 		$this->chanelog[$data['bundle']][] = array(
 			'#type' => 'markup',
 			'#markup' => $this->chanelUpdateMethod($data),
+			'#prefix' => '<div class="bt-export-results">',
+			'#suffix' => '</div>',
 		);
 	}
 	
@@ -98,6 +126,6 @@ class btExportChanelog{
 	}
 	
 	public function cleanUp(){
-		dpm($this->chanelog);
+		return $this->chanelog;
 	}
 }

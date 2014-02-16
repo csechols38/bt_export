@@ -7,6 +7,11 @@
 
 
 
+function bt_export_form_alter(&$form, &$form_state, $form_id){
+	//dpm($form);
+}
+
+
 /**
  * @ implements hook_menu()
  *
@@ -32,7 +37,7 @@ function bt_export_menu(){
  *  The unserialized code to import
  */
 function bt_export_import($code) {
-	$results = NULL;
+	$results = array();
 	if(!empty($code->components)){
 		foreach($code->components as $component => $value){
 			switch($component){
@@ -56,22 +61,23 @@ function bt_export_import($code) {
 					$import->importDsViewModes();
 				}
 				//our import results
-				$results = $import->cleanUp();
+				$results[] = $import->cleanUp();
 				break;
 			case 'taxonomy':
 				$taxonomy = new BtTaxonomyImport($code->taxonomy_vocabularies);
 				$taxonomy->importTaxonomy();
-				$taxonomy->cleanUp();
+				$results[] = $taxonomy->cleanUp();
 				break;
 			case 'advanced_ds':
 				$ds_view_modes = new BtExportDsViewModes();
 				$ds_view_modes->importDsNodeViewModes($code->advanced_ds);
-				$ds_view_modes->cleanUp();
+				$results[] = $ds_view_modes->cleanUp();
 				break;
 			}
 		}
 	}
-
+	
+	variable_set('bt_export_results', serialize($results));
 	return $results;
 }
 
@@ -177,7 +183,6 @@ function _bt_export_submit($form, &$form_state){
 		$import_code = bt_export_import($unserialized_node);
 		break;
 	}
-
 }
 
 
@@ -223,6 +228,7 @@ function _bt_export_export_components($single = ''){
 }
 
 
+
 /**
  * @param $bundle
  *   content type bundle
@@ -239,6 +245,7 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 	$view_modes['full'] = array();
 	$view_modes['full'] = new StdClass();
 	$view_modes['full']->view_mode = 'full';
+	$view_modes['full']->label = 'Full';
 	//loop through the view modes and load view mode instances
 	foreach($view_modes as $values){
 		$ds_view_mode = ds_get_layout('node', $bundle, $values->view_mode);
@@ -252,6 +259,8 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 				$ds_view_modes->{$values->view_mode} = new StdClass();
 				//set the display suit layout settings
 				$ds_view_modes->{$values->view_mode}->ds_layout_settings = $ds_view_mode;
+				//set the view mode label
+				$ds_view_modes->{$values->view_mode}->view_mode_properties = $view_modes[$values->view_mode];
 				//get the display suit field settings
 				$ds_field_settings = ds_get_field_settings('node', $bundle, $values->view_mode);
 				if(!empty($ds_field_settings)){

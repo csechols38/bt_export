@@ -70,7 +70,7 @@ class BtExportDsViewModes extends BtImportContentType{
 								$table = 'ds_layout_settings';
 								break;
 							case 'field_settings':
-								$ds_settings['settings'] = serialize($ds_type_values);
+								$ds_settings['settings'] = $ds_type_values;
 								$table = 'ds_field_settings';
 								break;
 							case 'field_groups':
@@ -79,9 +79,9 @@ class BtExportDsViewModes extends BtImportContentType{
 							}
 							$exists = $this->checkExistingDsLayout($id, $bundle, $table);
 							if(empty($exists)){
-								$insert = $this->importDsLayout($ds_settings, $table);
+								$insert = $this->importDsLayout($ds_settings, $table, $bundle);
 							}else{
-								$update = $this->importUpdateDsLayout($ds_settings, $table);
+								$update = $this->importUpdateDsLayout($ds_settings, $table, $bundle);
 							}
 						}
 					}
@@ -132,7 +132,8 @@ class BtExportDsViewModes extends BtImportContentType{
 	
 	public function cleanUp(){
 		$this->dsCleanUp();
-		$this->chaneLog->cleanUp();
+		$return = $this->chaneLog->cleanUp();
+		return $return;
 	}
 
 	protected function dsCleanUp(){

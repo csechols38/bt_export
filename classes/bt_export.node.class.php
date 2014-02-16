@@ -21,18 +21,11 @@ class BtImportContentType{
 		'field_groups' => 0,
 		'view_modes' => 0,
 	);
-	public $chanel = array(
-		'ds' => '',
-		'bundle' => '',
-		'field' => '',
-		'taxonomy' => '',
-	);
 
 	//construct
 	public function __construct($node){
 		module_load_include('class.php', 'bt_export', 'classes/bt_export_ds_view_modes');
 		$this->chaneLog = new btExportChanelog();
-		$this->chaneLog->updateChanelog('test', array());
 		$this->node = $node->content_type;
 		$import_types = new StdClass();
 		$this->import_types = &$import_types;
@@ -74,7 +67,9 @@ class BtImportContentType{
 					//save the content type
 					node_type_save($this->node_settings);
 					$this->results['content_type']++;
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'field_group', $this->node_settings->name, 'updated');
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'bundle', $this->node_settings->name, 'created');
+				}else{
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'bundle', $this->node_settings->name, 'upto_date');
 				}
 			}
 		}
@@ -90,16 +85,32 @@ class BtImportContentType{
 		if(is_object($info)){
 			foreach($info as $view_mode => $settings){
 				//save the view mode types
+				
+				//create the video mode if it doesnt exists
+				if(!empty($settings->view_mode_properties) && $view_mode != 'full'){
+					$new_view_mode = new StdClass;
+					$new_view_mode->view_mode = $view_mode;
+					$new_view_mode->label = $settings->view_mode_properties->label;
+					$new_view_mode->entities = serialize($settings->view_mode_properties->entities);
+					dpm($new_view_mode);
+					//save the view mode to the database
+					if(drupal_write_record('ds_view_modes', $new_view_mode)){
+						$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'created');	
+					}else{
+						$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'upto_date');
+					}
+				}
+
+				
 				$bundle_settings = field_bundle_settings('node', $bundle);
 				if(empty($bundle_settings['view_modes'][$view_mode]['custom_settings'])){
 					$bundle_settings['view_modes'][$view_mode]['custom_settings'] = TRUE;
-					$bundle_settings['view_modes']['default']['custom_settings'] = FALSE;
 					// Save updated bundle settings.
 					$save = field_bundle_settings('node', $bundle, $bundle_settings);
 					$this->results['view_modes']++;
 					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'created');	
 				}else{
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'uptodate');
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'upto_date');
 				}
 				foreach($settings as $setting_type => $setting_values){
 					if(!empty($settings)){
@@ -128,9 +139,9 @@ class BtImportContentType{
 						$exists = $this->checkExistingDsLayout($id, $bundle, $table);
 						if(!empty($ds_settings['settings'])){
 							if(empty($exists)){
-								$insert = $this->importDsLayout($ds_settings, $table);
+								$insert = $this->importDsLayout($ds_settings, $table, $bundle);
 							}else{
-								$update = $this->importUpdateDsLayout($ds_settings, $table);
+								$update = $this->importUpdateDsLayout($ds_settings, $table, $bundle);
 							}
 						}
 					}
@@ -164,7 +175,7 @@ if(is_array($fields)){
 
 
 	//fucntion to update ds layout settings
-	public function importUpdateDsLayout($field_values, $table){
+	public function importUpdateDsLayout($field_values, $table, $bundle){
 		$update = db_update($table)
 		->fields($field_values)
 		->condition('id', $field_values['id'], '=')
@@ -174,35 +185,33 @@ if(is_array($fields)){
 			$result = 'updated';
 			$this->results['ds_updates']++;
 		}else{
-			$result = 'upto_data';
+			$result = 'upto_date';
 		}
 		switch($table){
-				case 'ds_layout_setting':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_layout_settings', $field_values['view_mode'], $result);
+				case 'ds_layout_settings':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
 				break;
-				case 'ds_field_setting':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_field_settings', $field_values['view_mode'], $result);
+				case 'ds_field_settings':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
 				break;
 			}
 	}
 
 	//function for inserting layout and field settings into database
-	public function importDsLayout($field_values, $table){
-		$insert = db_insert($table)
-		->fields($field_values)
-		->execute();
+	public function importDsLayout($field_values, $table, $bundle){
+		$insert = drupal_write_record($table, $field_values);
 		if($insert){
-			$result = 'updated';
+			$result = 'created';
 			$this->results['ds_settings']++;
 		}else{
 			$result = 'failed';
 		}
 		switch($table){
-				case 'ds_layout_setting':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_layout_settings', $field_values['view_mode'], $result);
+				case 'ds_layout_settings':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
 				break;
-				case 'ds_field_setting':
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'ds_field_settings', $field_values['view_mode'], $result);
+				case 'ds_field_settings':
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
 				break;
 			}
 			return $insert;
@@ -318,7 +327,7 @@ if(is_array($fields)){
 
 	//clean up function to return results
 	public function cleanUp(){
-		$this->chaneLog->cleanUp();
+		$return = $this->chaneLog->cleanUp();
 		$results = $this->results;
 		$result = '<div>';
 		$path = l($this->node_settings->name, '../../admin/structure/types/manage/'. $this->node_settings->type .'', array());
@@ -331,7 +340,7 @@ if(is_array($fields)){
 		$result .= '<div>Created '.$results['field_groups'].' new Field Groups.</div>';
 		$result .= '</div>';
 		drupal_set_message($result);
-		return ;
+		return $return;
 	}
 
 }
