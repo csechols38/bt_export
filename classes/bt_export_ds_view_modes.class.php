@@ -102,10 +102,10 @@ class BtExportDsViewModes extends BtImportContentType{
 		}
 		$this->ImportDsFieldGroups($this->field_groups);
 	}
-	
-	
-	
-	
+
+
+
+
 	//function for importing custom fields
 	public function importCustomDsFields($fields = array()){
 		if(!empty($fields)){
@@ -115,10 +115,15 @@ class BtExportDsViewModes extends BtImportContentType{
 				$field->label = $data['title'];
 				$field->field_type = $data['field_type'];
 				$field->properties = !empty($data['properties']) ? $data['properties'] : array();
-				$field->entities = array('node' => 'node');
+				$field->entities = !empty($data['entities']) ? $data['entities'] : array('node' => 'node');
 				$field->ui_limit = $data['ui_limit'];
-				if(drupal_write_record('ds_fields', $field)){
-				}
+
+				//delete current row
+				db_delete('ds_fields')
+				->condition('field', $field->field)
+				->execute();
+				//save the code field
+				drupal_write_record('ds_fields', $field);
 			}
 		}
 	}
@@ -149,8 +154,8 @@ class BtExportDsViewModes extends BtImportContentType{
 		}
 	}
 
-	
-	
+
+
 	public function cleanUp(){
 		// Clear entity info cache and trigger menu build on next request.
 		cache_clear_all('entity_info', 'cache', TRUE);
