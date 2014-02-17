@@ -36,7 +36,6 @@ function bt_export_import($code) {
 	$results = array();
 	if(!empty($code->components)){
 		foreach($code->components as $component => $value){
-			dpm($component);
 			switch($component){
 			case 'content_type':
 				//import object
@@ -323,23 +322,25 @@ function bt_export_taxonomy_handler($type = 'vocabularies'){
 function bt_export_extract_custom_fields($bundles = array(), $view_modes = array()){
 	$custom_fields = array();
 	$fields = ds_get_fields('node');
+	$all_custom_fields = ctools_export_crud_load_all('ds_fields');
 	foreach($bundles as $delta => $bundle){
 		foreach ($fields as $key => $field){
 			foreach($view_modes as $name => $view_mode){
 				// Check on ui_limit.
 				if (isset($field['ui_limit'])) {
 
-					$continue = TRUE;
+					$continue = FALSE;
 					foreach ($field['ui_limit'] as $limitation) {
 						list($limit_bundle, $limit_view_mode) = explode('|', $limitation);
 						if ($limit_bundle == '*' || $limit_bundle == $bundle) {
+							$continue = TRUE;
 							if ($limit_view_mode == '*' || $limit_view_mode == $view_mode) {
-								$continue = FALSE;
+								$continue = TRUE;
 							}
 						}
 					}
-
 					if ($continue) {
+						$field['entities'] = $all_custom_fields[$key]->entities;
 						$custom_fields[$key] = $field;
 					}
 				}
