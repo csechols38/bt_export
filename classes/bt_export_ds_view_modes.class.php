@@ -108,6 +108,9 @@ class BtExportDsViewModes extends BtImportContentType{
 
 	//function for importing custom fields
 	public function importCustomDsFields($fields = array(), $bundle = ''){
+		$created = array(
+			'custom_fields' => 0,
+		);
 		if(!empty($fields)){
 			foreach($fields as $machine_name => $data){
 				$field = new StdClass();
@@ -126,9 +129,11 @@ class BtExportDsViewModes extends BtImportContentType{
 				if($import = drupal_write_record('ds_fields', $field)){
 					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'custom_fields', $field->label, 'created');
 					$this->results['custom_fields']++;
+					$created['custom_fields']++;
 				}
 			}
 		}
+		return $created;
 	}
 
 
@@ -159,22 +164,24 @@ class BtExportDsViewModes extends BtImportContentType{
 
 
 
-	public function cleanUp(){
+	public function cleanUp($message = TRUE){
 		// Clear entity info cache and trigger menu build on next request.
 		cache_clear_all('entity_info', 'cache', TRUE);
-		$this->dsCleanUp();
+		$this->dsCleanUp($message);
 		$return = $this->chaneLog->cleanUp();
 		return $return;
 	}
 
-	protected function dsCleanUp(){
-		$results = $this->results;
-		$result = '';
-		$result .= '<div>Updated '.$results['ds_updates'].' Display Suite layouts.</div>';
-		$result .= '<div>Created '.$results['ds_settings'].' new Display Suite Layouts and Field Settings.</div>';
-		$result .= '<div>Created '.$results['field_groups'].' new Display Suite Field Groups.</div>';
-		$result .= '<div>Created '.$results['view_modes'].' new view modes.</div>';
-		$result .= '<div>Created '.$results['custom_fields'].' new Display Suite custom fields.</div>';
-		drupal_set_message($result);
+	protected function dsCleanUp($message = TRUE){
+		if($message){
+			$results = $this->results;
+			$result = '';
+			$result .= '<div>Updated '.$results['ds_updates'].' Display Suite layouts.</div>';
+			$result .= '<div>Created '.$results['ds_settings'].' new Display Suite Layouts and Field Settings.</div>';
+			$result .= '<div>Created '.$results['field_groups'].' new Display Suite Field Groups.</div>';
+			$result .= '<div>Created '.$results['view_modes'].' new view modes.</div>';
+			$result .= '<div>Created '.$results['custom_fields'].' new Display Suite custom fields.</div>';
+			drupal_set_message($result);
+		}
 	}
 }

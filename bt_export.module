@@ -57,23 +57,35 @@ function bt_export_import($code) {
 					$import->importDsViewModes();
 				}
 				//our import results
-				$results = array_merge_recursive($import->cleanUp(), $results);
+				$results = array_merge_recursive($results, $import->cleanUp());
 				break;
 			case 'taxonomy':
 				$taxonomy = new BtTaxonomyImport($code->taxonomy_vocabularies);
 				$taxonomy->importTaxonomy();
-				$results = array_merge_recursive($taxonomy->cleanUp(), $results);
+				$results = array_merge_recursive($results, $taxonomy->cleanUp());
 				break;
 			case 'advanced_ds':
 				$ds_view_modes = new BtExportDsViewModes();
 				$ds_view_modes->importDsNodeViewModes($code->advanced_ds);
-				$results = array_merge_recursive($ds_view_modes->cleanUp(), $results);
+				$results = array_merge_recursive($results, $ds_view_modes->cleanUp());
 				break;
 			case 'custom_fields':
 				$ds_import = new BtExportDsViewModes();
 				$ds_import->importCustomDsFields($code->custom_fields, $code->content_type->machine_name);
-				$results = array_merge_recursive($ds_import->cleanUp(), $results);
+				$results = array_merge_recursive($results, $ds_import->cleanUp(FALSE));
 			break;
+			}
+		}
+	}
+	if(!empty($results)){
+		foreach($results as $bundle_wrapper => &$bundle_children){
+			foreach($bundle_children as $delta => &$messages){
+				$messages = array_unique($messages);
+				if(isset($messages[0])){
+					$value = $messages[0];
+					unset($messages[0]);
+					$messages = $value;
+				}
 			}
 		}
 	}
@@ -344,7 +356,6 @@ function bt_export_extract_custom_fields($bundles = array(), $view_modes = array
 					if ($continue) {
 						$field['entities'] = $all_custom_fields[$key]->entities;
 						$custom_fields[$key] = $field;
-						dpm($field);
 					}
 				}
 			}
