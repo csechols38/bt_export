@@ -310,6 +310,7 @@ function bt_export_extract_custom_fields($entity_type, $fields, &$export){
 		$all_field = ds_get_fields($entity_type);
 		$custom_fields = array_intersect_assoc($all_field, $fields);
 		if(!empty($custom_fields)){
+			dpm($custom_fields);
 			//$export->custom_fields = $custom_fields;
 		}
 	}
