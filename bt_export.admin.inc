@@ -145,6 +145,19 @@ function _bt_export_form($form, &$form_state){
 		'#multiple' => TRUE,
 	);
 	
+	$form['export_wrapper']['content_types']['ds_custom_fields'] = array(
+		'#type' => 'checkboxes',
+		'#title' => t('Display Suite Custom Fields'),
+		'#options' => array(
+			'yes' => t('Yes'),
+		),
+		'#states' => array(
+				'visible' => array(   // action to take.
+					':input[name="export_types[ds]"]' => array('checked' => TRUE),
+				),
+			),
+	);
+	
 	
 	//our field group options per module
 	$field_group_options = array();

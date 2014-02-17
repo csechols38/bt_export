@@ -102,21 +102,27 @@ class BtExportDsViewModes extends BtImportContentType{
 		}
 		$this->ImportDsFieldGroups($this->field_groups);
 	}
-
-
-
-
-	/*
-public function AddViewMode($bundle, $view_mode){
-		$bundle_settings = field_bundle_settings('node', $bundle);
-		if(empty($bundle_settings['view_modes'][$view_mode]['custom_settings'])){
-			$bundle_settings['view_modes'][$view_mode]['custom_settings'] = TRUE;
-			$bundle_settings['view_modes']['default']['custom_settings'] = FALSE;
-			// Save updated bundle settings.
-			$save = field_bundle_settings('node', $bundle, $bundle_settings);
+	
+	
+	
+	
+	//function for importing custom fields
+	private function importCustomDsFields($fields = array()){
+		if(!empty($fields)){
+			foreach($fields as $machine_name => $data){
+				$field = (object) $data;
+				$field->field = $machine_name;
+				$field->label = $data['title'];
+				$field->field_type = $data['field_type'];
+				$field->properties = $data['properties'];
+				$field->entities = array('node' => 'node');
+				dpm($field);
+				drupal_write_record('ds_fields', $field, array('field'));
+			}
 		}
 	}
-*/
+
+
 
 
 

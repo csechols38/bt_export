@@ -91,11 +91,11 @@ class BtImportContentType{
 			//save the view mode to the database
 			$save_view_mode = drupal_write_record('ds_view_modes', $new_view_mode);
 			switch($save_view_mode){
-				case 1:
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'updated');
+			case 1:
+				$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'updated');
 				break;
-				default:
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'failed');
+			default:
+				$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'failed');
 				break;
 			}
 		}
@@ -149,7 +149,6 @@ class BtImportContentType{
 							$table = 'ds_field_settings';
 							break;
 						case 'custom_fields':
-							$this->ImportCustomDsFields($setting_values);
 							break;
 						}
 						$exists = $this->checkExistingDsLayout($id, $bundle, $table);
@@ -164,29 +163,6 @@ class BtImportContentType{
 				}
 			}
 		}
-	}
-
-
-
-	//function for importing custom fields
-	private function ImportCustomDsFields($fields = array()){
-		/*
-if(is_array($fields)){
-			foreach($fields as $machine_name => $data){
-				$field = (object) $data;
-				if(!empty($field->field_type) && $field->field_type > 3 && !empty($field->properties)){
-					$field->properties = serialize($data['properties']);
-					$field->field = $machine_name;
-					$field->label = $field->title;
-					if(!empty($data['ui_limit'])){
-						$field->ui_limit = serialize($data['ui_limit']);
-					}
-					unset($field->title);
-					drupal_write_record('ds_fields', $field, array('field'));
-				}
-			}
-		}
-*/
 	}
 
 

@@ -36,6 +36,7 @@ function bt_export_import($code) {
 	$results = array();
 	if(!empty($code->components)){
 		foreach($code->components as $component => $value){
+			dpm($component);
 			switch($component){
 			case 'content_type':
 				//import object
@@ -69,6 +70,10 @@ function bt_export_import($code) {
 				$ds_view_modes->importDsNodeViewModes($code->advanced_ds);
 				$results[] = $ds_view_modes->cleanUp();
 				break;
+			case 'custom_fields':
+				$ds_import = new BtExportDsViewModes();
+				$ds_import->importCustomDsFields($code->custom_fields);
+			break;
 			}
 		}
 	}
@@ -129,6 +134,15 @@ function _bt_export_submit(&$form, &$form_state){
 			_bt_export_node_view_modes($form_state['values']['ds_view_modes'], $export);
 
 		}
+		if(!empty($form_state['values']['ds_custom_fields']['yes'])){
+			if(!empty($export->content_type->machine_name)){
+				$export->components['custom_fields'] = TRUE;
+				$export->custom_fields = array();
+				bt_export_ds_view_modes_export($export->content_type->machine_name, FALSE, TRUE, $export);
+				$custom_fields = bt_export_extract_custom_fields(array($export->content_type->machine_name), $export->custom_fields['view_modes']);
+				$export->custom_fields = $custom_fields;
+			}
+		}
 		//taxonomy vocablularies
 		if(!empty($form_state['values']['taxonomy_terms'])){
 			//requested vocabularies
@@ -144,6 +158,7 @@ function _bt_export_submit(&$form, &$form_state){
 			$form_state['rebuild'] = TRUE;
 			//searialize our node object
 			$serialized = serialize($export);
+			
 			//make our serialized code our code-textareas defautl value
 			$form_state['code'] = $serialized;
 		}else{
@@ -234,7 +249,7 @@ function _bt_export_export_components($single = ''){
  *
  * This function will return Display Suite fields groups or view modes
  */
-function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
+function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE, $extract_view_mode_keys = FALSE, StdCLass &$export = NULL){
 	$ds_view_modes = new StdClass();
 	//get the view modes
 	$view_modes = ctools_export_crud_load_all('ds_view_modes');
@@ -247,7 +262,7 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 	$view_modes['search_result'] = new StdClass();
 	$view_modes['search_result']->view_mode = 'search_result';
 	$view_modes['search_result']->label = 'Search Results';
-	
+
 	//loop through the view modes and load view mode instances
 	foreach($view_modes as $values){
 		$ds_view_mode = ds_get_layout('node', $bundle, $values->view_mode);
@@ -269,8 +284,9 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 				$ds_field_settings = ds_get_field_settings('node', $bundle, $values->view_mode);
 				if(!empty($ds_field_settings)){
 					$ds_view_modes->{$values->view_mode}->ds_field_settings = $ds_field_settings;
-					//get our custom fields
-					$custom_fields = bt_export_extract_custom_fields('node', $ds_view_modes->{$values->view_mode}->ds_field_settings, $ds_view_modes->{$values->view_mode});
+				}
+				if($extract_view_mode_keys && !empty($ds_view_mode)){
+					$export->custom_fields['view_modes'][$values->view_mode] = $values->view_mode;
 				}
 				break;
 			}
@@ -304,16 +320,33 @@ function bt_export_taxonomy_handler($type = 'vocabularies'){
 
 
 //function for extracting display suite code fields
-function bt_export_extract_custom_fields($entity_type, $fields, &$export){
+function bt_export_extract_custom_fields($bundles = array(), $view_modes = array()){
 	$custom_fields = array();
-	if(is_array($fields)){
-		$all_field = ds_get_fields($entity_type);
-		$custom_fields = array_intersect_assoc($all_field, $fields);
-		if(!empty($custom_fields)){
-			dpm($custom_fields);
-			//$export->custom_fields = $custom_fields;
+	$fields = ds_get_fields('node');
+	foreach($bundles as $delta => $bundle){
+		foreach ($fields as $key => $field){
+			foreach($view_modes as $name => $view_mode){
+				// Check on ui_limit.
+				if (isset($field['ui_limit'])) {
+
+					$continue = TRUE;
+					foreach ($field['ui_limit'] as $limitation) {
+						list($limit_bundle, $limit_view_mode) = explode('|', $limitation);
+						if ($limit_bundle == '*' || $limit_bundle == $bundle) {
+							if ($limit_view_mode == '*' || $limit_view_mode == $view_mode) {
+								$continue = FALSE;
+							}
+						}
+					}
+
+					if ($continue) {
+						$custom_fields[$key] = $field;
+					}
+				}
+			}
 		}
 	}
+	return $custom_fields;
 }
 
 
