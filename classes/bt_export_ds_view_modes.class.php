@@ -107,17 +107,18 @@ class BtExportDsViewModes extends BtImportContentType{
 	
 	
 	//function for importing custom fields
-	private function importCustomDsFields($fields = array()){
+	public function importCustomDsFields($fields = array()){
 		if(!empty($fields)){
 			foreach($fields as $machine_name => $data){
-				$field = (object) $data;
+				$field = new StdClass();
 				$field->field = $machine_name;
 				$field->label = $data['title'];
 				$field->field_type = $data['field_type'];
-				$field->properties = $data['properties'];
+				$field->properties = !empty($data['properties']) ? $data['properties'] : array();
 				$field->entities = array('node' => 'node');
-				dpm($field);
-				drupal_write_record('ds_fields', $field, array('field'));
+				$field->ui_limit = $data['ui_limit'];
+				if(drupal_write_record('ds_fields', $field)){
+				}
 			}
 		}
 	}
