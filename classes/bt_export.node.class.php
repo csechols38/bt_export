@@ -89,11 +89,14 @@ class BtImportContentType{
 			$new_view_mode->label = $properties->label;
 			$new_view_mode->entities = $properties->entities;
 			//save the view mode to the database
-			if(drupal_write_record('ds_view_modes', $new_view_mode)){
-				$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'created');
-				$this->results['view_modes']++;
-			}else{
-				$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'failed');
+			$save_view_mode = drupal_write_record('ds_view_modes', $new_view_mode);
+			switch($save_view_mode){
+				case 1:
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'updated');
+				break;
+				default:
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'failed');
+				break;
 			}
 		}
 		//update the bundle settings
@@ -103,6 +106,7 @@ class BtImportContentType{
 			// Save updated bundle settings.
 			$save = field_bundle_settings('node', $bundle, $bundle_settings);
 			/* $this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $view_mode, 'updated'); */
+			$this->results['view_modes']++;
 		}
 	}
 
@@ -121,6 +125,7 @@ class BtImportContentType{
 					unset($settings->view_mode_properties);
 				}else{
 					$this->saveNodeViewMode(NULL, $view_mode, $bundle);
+					unset($settings->view_mode_properties);
 				}
 				foreach($settings as $setting_type => $setting_values){
 					if(!empty($settings)){
@@ -131,6 +136,7 @@ class BtImportContentType{
 							'entity_type' => 'node',
 							'bundle' => $bundle,
 							'view_mode' => $view_mode,
+							'settings' => array(),
 						);
 						switch($setting_type){
 						case 'ds_layout_settings':
@@ -338,6 +344,8 @@ if(is_array($fields)){
 
 	//clean up function to return results
 	public function cleanUp(){
+		// Clear entity info cache and trigger menu build on next request.
+		cache_clear_all('entity_info', 'cache', TRUE);
 		$return = $this->chaneLog->cleanUp();
 		$results = $this->results;
 		$result = '<div>';

@@ -73,6 +73,7 @@ class BtExportDsViewModes extends BtImportContentType{
 								'entity_type' => 'node',
 								'bundle' => $bundle,
 								'view_mode' => $view_mode_name,
+								'settings' => array(),
 							);
 							switch($ds_type){
 							case 'layout_settings':
@@ -144,6 +145,8 @@ public function AddViewMode($bundle, $view_mode){
 	
 	
 	public function cleanUp(){
+		// Clear entity info cache and trigger menu build on next request.
+		cache_clear_all('entity_info', 'cache', TRUE);
 		$this->dsCleanUp();
 		$return = $this->chaneLog->cleanUp();
 		return $return;

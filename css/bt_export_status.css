@@ -1,0 +1,15 @@
+.bt-export-results-created{
+	background:green;
+}
+
+.bt-export-results-updated{
+	background:silver;
+}
+
+.bt-export-results-upto_date{
+	background:silver;
+}
+
+.bt-export-results-failed{
+	background:red;
+}

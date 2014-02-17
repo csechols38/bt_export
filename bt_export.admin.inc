@@ -6,20 +6,21 @@ function _bt_export_form($form, &$form_state){
 	$form = array();
 	 drupal_add_library('system', 'drupal.collapse');
 	 module_load_include('class.php', 'bt_export', 'classes/bt_export_ds_view_modes');
-	 $results = variable_get('bt_export_results', '');
-	 if(!empty($results)){
-	 	$form['chanel_log'] = array(
-		 	'#type' => 'fieldset',
-		 	'#collapsible' => TRUE,
-		 	'#collapsed' => TRUE,
-		 	'#title' => t('Chanel Log'),
-		 );
-		 $form['chanel_log']['prev_results'] = array(
-		 	'#type' => 'markup',
-		 	'#markup' => drupal_render(unserialize($results)),
-		 );
-	 }
-	 variable_del('bt_export_results');
+	 
+	 
+	 //chow the result chanel log
+		if(!empty($form_state['chanel_log'])){
+			$form['chanel_log'] = array(
+				'#type' => 'fieldset',
+				'#collapsible' => TRUE,
+				'#collapsed' => TRUE,
+				'#title' => t('Chanel Log'),
+			);
+			$form['chanel_log']['prev_results'] = array(
+				'#type' => 'markup',
+				'#markup' => drupal_render($form_state['chanel_log']),
+			);
+		}
 	
 	//import section
 	//import vertcle tab
@@ -185,8 +186,6 @@ function _bt_export_form($form, &$form_state){
 		);
 	}
 	//end export section
-
-
 	$form['#validate'] = array('_bt_export_validate');
 	$form['#submit'] = array('_bt_export_submit');
 

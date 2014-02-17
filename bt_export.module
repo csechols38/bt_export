@@ -7,10 +7,6 @@
 
 
 
-function bt_export_form_alter(&$form, &$form_state, $form_id){
-	//dpm($form);
-}
-
 
 /**
  * @ implements hook_menu()
@@ -76,8 +72,6 @@ function bt_export_import($code) {
 			}
 		}
 	}
-	
-	variable_set('bt_export_results', serialize($results));
 	return $results;
 }
 
@@ -116,7 +110,7 @@ function _bt_export_validate($form, &$form_state){
  * @ Our import / export for submit handler.
  *
  */
-function _bt_export_submit($form, &$form_state){
+function _bt_export_submit(&$form, &$form_state){
 	$export = new StdClass();
 	$export->trigger = $form_state['triggering_element']['#value'];
 	$export->components = array();
@@ -133,7 +127,7 @@ function _bt_export_submit($form, &$form_state){
 		if(!empty($form_state['values']['ds_view_modes'])){
 			$export->components['advanced_ds'] = TRUE;
 			_bt_export_node_view_modes($form_state['values']['ds_view_modes'], $export);
-			
+
 		}
 		//taxonomy vocablularies
 		if(!empty($form_state['values']['taxonomy_terms'])){
@@ -181,6 +175,9 @@ function _bt_export_submit($form, &$form_state){
 		}
 		//import the content type
 		$import_code = bt_export_import($unserialized_node);
+		//rebuild the form with the chanel log
+		$form_state['chanel_log'] = $import_code;
+		$form_state['rebuild'] = TRUE;
 		break;
 	}
 }
@@ -277,7 +274,7 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 	return $ds_view_modes;
 }
 
-/* dpm( unserialize('s:530:"a:9:{s:7:"regions";a:1:{s:10:"ds_content";a:3:{i:0;s:5:"title";i:1;s:28:"field_tour_comp_low_mem_cost";i:2;s:26:"field_tour_depart_duration";}}s:6:"fields";a:3:{s:5:"title";s:10:"ds_content";s:28:"field_tour_comp_low_mem_cost";s:10:"ds_content";s:26:"field_tour_depart_duration";s:10:"ds_content";}s:7:"classes";a:0:{}s:8:"wrappers";a:1:{s:10:"ds_content";s:3:"div";}s:14:"layout_wrapper";s:3:"div";s:17:"layout_attributes";s:0:"";s:23:"layout_attributes_merge";i:1;s:15:"hide_page_title";s:1:"0";s:17:"page_option_title";s:0:"";}";') ); */
+
 
 
 /**
