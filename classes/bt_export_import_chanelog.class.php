@@ -73,6 +73,9 @@ class btExportChanelog{
 					case 'bundle':
 						$message = t('Created Bundle <strong>@value</strong>', $value);
 					break;
+					case 'custom_fields':
+						$message = t('Created Custom Field <strong>@value</strong>', $value);
+					break;
 				}
 			break;
 			case 'failed':
@@ -103,6 +106,9 @@ class btExportChanelog{
 					break;
 					case 'bundle':
 						$message = t('Bundle <strong>@value</strong> already exists', $value);
+					break;
+					case 'custom_fields':
+						$message = t('Custom field <strong>@value</strong> already up to date', $value);
 					break;
 				}
 			break;

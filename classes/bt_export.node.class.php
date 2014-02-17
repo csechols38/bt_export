@@ -20,6 +20,7 @@ class BtImportContentType{
 		'ds_settings' => 0,
 		'field_groups' => 0,
 		'view_modes' => 0,
+		'custom_fields' => 0,
 	);
 
 	//construct
@@ -333,6 +334,7 @@ class BtImportContentType{
 		$result .= '<div>Updated '.$results['ds_updates'].' Display Suite layouts.</div>';
 		$result .= '<div>Created '.$results['ds_settings'].' new Display Suite Layouts and Field Settings.</div>';
 		$result .= '<div>Created '.$results['field_groups'].' new Field Groups.</div>';
+		$result .= '<div>Created '.$results['custom_fields'].' new Display Suite custom fields.</div>';
 		$result .= '</div>';
 		drupal_set_message($result);
 		return $return;

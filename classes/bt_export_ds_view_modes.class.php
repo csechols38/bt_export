@@ -107,7 +107,7 @@ class BtExportDsViewModes extends BtImportContentType{
 
 
 	//function for importing custom fields
-	public function importCustomDsFields($fields = array()){
+	public function importCustomDsFields($fields = array(), $bundle = ''){
 		if(!empty($fields)){
 			foreach($fields as $machine_name => $data){
 				$field = new StdClass();
@@ -116,14 +116,17 @@ class BtExportDsViewModes extends BtImportContentType{
 				$field->field_type = $data['field_type'];
 				$field->properties = !empty($data['properties']) ? $data['properties'] : array();
 				$field->entities = !empty($data['entities']) ? $data['entities'] : array('node' => 'node');
-				$field->ui_limit = $data['ui_limit'];
+				$field->ui_limit = implode("\n", $data['ui_limit']);
 
 				//delete current row
 				db_delete('ds_fields')
 				->condition('field', $field->field)
 				->execute();
 				//save the code field
-				drupal_write_record('ds_fields', $field);
+				if($import = drupal_write_record('ds_fields', $field)){
+					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'custom_fields', $field->label, 'created');
+					$this->results['custom_fields']++;
+				}
 			}
 		}
 	}
@@ -171,6 +174,7 @@ class BtExportDsViewModes extends BtImportContentType{
 		$result .= '<div>Created '.$results['ds_settings'].' new Display Suite Layouts and Field Settings.</div>';
 		$result .= '<div>Created '.$results['field_groups'].' new Display Suite Field Groups.</div>';
 		$result .= '<div>Created '.$results['view_modes'].' new view modes.</div>';
+		$result .= '<div>Created '.$results['custom_fields'].' new Display Suite custom fields.</div>';
 		drupal_set_message($result);
 	}
 }

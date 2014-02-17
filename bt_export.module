@@ -57,21 +57,22 @@ function bt_export_import($code) {
 					$import->importDsViewModes();
 				}
 				//our import results
-				$results[] = $import->cleanUp();
+				$results = array_merge_recursive($import->cleanUp(), $results);
 				break;
 			case 'taxonomy':
 				$taxonomy = new BtTaxonomyImport($code->taxonomy_vocabularies);
 				$taxonomy->importTaxonomy();
-				$results[] = $taxonomy->cleanUp();
+				$results = array_merge_recursive($taxonomy->cleanUp(), $results);
 				break;
 			case 'advanced_ds':
 				$ds_view_modes = new BtExportDsViewModes();
 				$ds_view_modes->importDsNodeViewModes($code->advanced_ds);
-				$results[] = $ds_view_modes->cleanUp();
+				$results = array_merge_recursive($ds_view_modes->cleanUp(), $results);
 				break;
 			case 'custom_fields':
 				$ds_import = new BtExportDsViewModes();
-				$ds_import->importCustomDsFields($code->custom_fields);
+				$ds_import->importCustomDsFields($code->custom_fields, $code->content_type->machine_name);
+				$results = array_merge_recursive($ds_import->cleanUp(), $results);
 			break;
 			}
 		}
@@ -323,6 +324,7 @@ function bt_export_extract_custom_fields($bundles = array(), $view_modes = array
 	$custom_fields = array();
 	$fields = ds_get_fields('node');
 	$all_custom_fields = ctools_export_crud_load_all('ds_fields');
+	$ignore_fields = array('search_snippet', 'comments', 'search_info');
 	foreach($bundles as $delta => $bundle){
 		foreach ($fields as $key => $field){
 			foreach($view_modes as $name => $view_mode){
@@ -332,7 +334,7 @@ function bt_export_extract_custom_fields($bundles = array(), $view_modes = array
 					$continue = FALSE;
 					foreach ($field['ui_limit'] as $limitation) {
 						list($limit_bundle, $limit_view_mode) = explode('|', $limitation);
-						if ($limit_bundle == '*' || $limit_bundle == $bundle) {
+						if ($limit_bundle == '*' && !in_array($key, $ignore_fields) || $limit_bundle == $bundle && !in_array($key, $ignore_fields)) {
 							$continue = TRUE;
 							if ($limit_view_mode == '*' || $limit_view_mode == $view_mode) {
 								$continue = TRUE;
@@ -342,6 +344,7 @@ function bt_export_extract_custom_fields($bundles = array(), $view_modes = array
 					if ($continue) {
 						$field['entities'] = $all_custom_fields[$key]->entities;
 						$custom_fields[$key] = $field;
+						dpm($field);
 					}
 				}
 			}
