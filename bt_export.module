@@ -277,6 +277,8 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 	return $ds_view_modes;
 }
 
+/* dpm( unserialize('s:530:"a:9:{s:7:"regions";a:1:{s:10:"ds_content";a:3:{i:0;s:5:"title";i:1;s:28:"field_tour_comp_low_mem_cost";i:2;s:26:"field_tour_depart_duration";}}s:6:"fields";a:3:{s:5:"title";s:10:"ds_content";s:28:"field_tour_comp_low_mem_cost";s:10:"ds_content";s:26:"field_tour_depart_duration";s:10:"ds_content";}s:7:"classes";a:0:{}s:8:"wrappers";a:1:{s:10:"ds_content";s:3:"div";}s:14:"layout_wrapper";s:3:"div";s:17:"layout_attributes";s:0:"";s:23:"layout_attributes_merge";i:1;s:15:"hide_page_title";s:1:"0";s:17:"page_option_title";s:0:"";}";') ); */
+
 
 /**
  * @param $type

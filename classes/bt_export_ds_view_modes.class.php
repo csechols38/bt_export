@@ -29,11 +29,16 @@ class BtExportDsViewModes extends BtImportContentType{
 
 	public function exportViewModes($view_modes = array(), $bundles = array(), &$export){
 		$this->view_modes = $view_modes;
+		$all_view_modes = ctools_export_crud_load_all('ds_view_modes');
 		foreach($view_modes as $name => $val){
 			$this->view_modes[$name] = array();
 			foreach($bundles as $delta => $bundle){
 				$this->view_modes[$name][$bundle] = array();
 				$this->view_modes[$name][$bundle]['layout_settings'] = ds_get_layout('node', $bundle, $name);
+				$view_mode_settings = !empty($all_view_modes[$name]) ? $all_view_modes[$name] : '';
+				if(!empty($view_mode_settings)){
+					$this->view_modes[$name][$bundle]['view_mode_properties'] = $view_mode_settings;
+				}
 				if($this->view_modes[$name][$bundle]['layout_settings']){
 					$this->view_modes[$name][$bundle]['field_settings'] = ds_get_field_settings('node', $bundle, $name);
 					$field_groups = field_group_info_groups('node', $bundle, $name);
@@ -54,7 +59,13 @@ class BtExportDsViewModes extends BtImportContentType{
 			foreach($view_modes as $view_mode_name => $values){
 				foreach($values as $bundle => $bundle_values){
 					if(node_type_load($bundle)){
-						$this->AddViewMode($bundle, $view_mode_name);
+						//$this->AddViewMode($bundle, $view_mode_name);
+						if(!empty($bundle_values['view_mode_properties']) && $view_mode_name != 'full'){
+							$this->saveNodeViewMode($bundle_values['view_mode_properties'], $view_mode_name, $bundle);
+							unset($bundle_values['view_mode_properties']);
+						}else{
+							$this->saveNodeViewMode(NULL, $view_mode_name, $bundle);
+						}
 						foreach($bundle_values as $ds_type => $ds_type_values){
 							$id = 'node' . '|' . $bundle . '|' . $view_mode_name;
 							$ds_settings = array(
@@ -66,7 +77,7 @@ class BtExportDsViewModes extends BtImportContentType{
 							switch($ds_type){
 							case 'layout_settings':
 								$ds_settings['layout'] = $ds_type_values['layout'];
-								$ds_settings['settings'] = serialize($ds_type_values['settings']);
+								$ds_settings['settings'] = $ds_type_values['settings'];
 								$table = 'ds_layout_settings';
 								break;
 							case 'field_settings':
@@ -94,7 +105,8 @@ class BtExportDsViewModes extends BtImportContentType{
 
 
 
-	public function AddViewMode($bundle, $view_mode){
+	/*
+public function AddViewMode($bundle, $view_mode){
 		$bundle_settings = field_bundle_settings('node', $bundle);
 		if(empty($bundle_settings['view_modes'][$view_mode]['custom_settings'])){
 			$bundle_settings['view_modes'][$view_mode]['custom_settings'] = TRUE;
@@ -103,6 +115,7 @@ class BtExportDsViewModes extends BtImportContentType{
 			$save = field_bundle_settings('node', $bundle, $bundle_settings);
 		}
 	}
+*/
 
 
 

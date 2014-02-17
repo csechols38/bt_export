@@ -78,23 +78,32 @@ class BtImportContentType{
 
 
 	//function to save the view mode in the database
-	public function saveNodeViewMode($properties){
-		// Delete previous view_mode configuration (if any)
-		db_delete('ds_view_modes')
-		->condition('view_mode', $properties->view_mode)
-		->execute();
-		$new_view_mode = new StdClass;
-		$new_view_mode->view_mode = $properties->view_mode;
-		$new_view_mode->label = $properties->label;
-		$new_view_mode->entities = serialize($properties->entities);
-		//save the view mode to the database
-		/*
-if(drupal_write_record('ds_view_modes', $new_view_mode)){
-			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $properties->label, 'created');
-		}else{
-			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $properties->label, 'failed');
+	public function saveNodeViewMode($properties = array(), $view_mode, $bundle){
+		if(!empty($properties)){
+			// Delete previous view_mode configuration (if any)
+			db_delete('ds_view_modes')
+			->condition('view_mode', $properties->view_mode)
+			->execute();
+			$new_view_mode = new StdClass;
+			$new_view_mode->view_mode = $properties->view_mode;
+			$new_view_mode->label = $properties->label;
+			$new_view_mode->entities = $properties->entities;
+			//save the view mode to the database
+			if(drupal_write_record('ds_view_modes', $new_view_mode)){
+				$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'created');
+				$this->results['view_modes']++;
+			}else{
+				$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $properties->label, 'failed');
+			}
 		}
-*/
+		//update the bundle settings
+		$bundle_settings = field_bundle_settings('node', $bundle);
+		if(empty($bundle_settings['view_modes'][$view_mode]['custom_settings'])){
+			$bundle_settings['view_modes'][$view_mode]['custom_settings'] = TRUE;
+			// Save updated bundle settings.
+			$save = field_bundle_settings('node', $bundle, $bundle_settings);
+			/* $this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'view_mode', $view_mode, 'updated'); */
+		}
 	}
 
 
@@ -106,23 +115,12 @@ if(drupal_write_record('ds_view_modes', $new_view_mode)){
 		if(is_object($info)){
 			foreach($info as $view_mode => $settings){
 				//save the view mode types
-
 				//create the video mode if it doesnt exists
 				if(!empty($settings->view_mode_properties) && $view_mode != 'full'){
-					$this->saveNodeViewMode($settings->view_mode_properties);
+					$this->saveNodeViewMode($settings->view_mode_properties, $view_mode, $bundle);
 					unset($settings->view_mode_properties);
-				}
-
-
-				$bundle_settings = field_bundle_settings('node', $bundle);
-				if(empty($bundle_settings['view_modes'][$view_mode]['custom_settings'])){
-					$bundle_settings['view_modes'][$view_mode]['custom_settings'] = TRUE;
-					// Save updated bundle settings.
-					$save = field_bundle_settings('node', $bundle, $bundle_settings);
-					$this->results['view_modes']++;
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'created');
 				}else{
-					$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $this->node_settings->type, 'view_mode', $view_mode, 'upto_date');
+					$this->saveNodeViewMode(NULL, $view_mode, $bundle);
 				}
 				foreach($settings as $setting_type => $setting_values){
 					if(!empty($settings)){
@@ -136,12 +134,12 @@ if(drupal_write_record('ds_view_modes', $new_view_mode)){
 						);
 						switch($setting_type){
 						case 'ds_layout_settings':
-							$ds_settings['settings'] = !empty($settings->ds_layout_settings['settings']) ? serialize($settings->ds_layout_settings['settings']) : '';
+							$ds_settings['settings'] = $setting_values['settings'];
 							$ds_settings['layout'] = $setting_values['layout'];
 							$table = 'ds_layout_settings';
 							break;
 						case 'ds_field_settings':
-							$ds_settings['settings'] = serialize($settings->ds_field_settings);
+							$ds_settings['settings'] = $settings->ds_field_settings;
 							$table = 'ds_field_settings';
 							break;
 						case 'custom_fields':
@@ -188,6 +186,7 @@ if(is_array($fields)){
 
 	//fucntion to update ds layout settings
 	public function importUpdateDsLayout($field_values, $table, $bundle){
+		$field_values['settings'] = serialize($field_values['settings']);
 		$update = db_update($table)
 		->fields($field_values)
 		->condition('id', $field_values['id'], '=')

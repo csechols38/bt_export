@@ -80,6 +80,9 @@ class btExportChanelog{
 					case 'ds_field_settings':
 						$message = t('Failed to Create New Display Suite Field Settings For Layout @value', $value);
 					break;
+					case 'view_mode':
+						$message = t('Failed Creating View Mode @value', $value);
+					break;
 				}
 			break;
 			case 'upto_date':
