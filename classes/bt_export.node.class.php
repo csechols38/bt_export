@@ -206,10 +206,10 @@ if(is_array($fields)){
 		}
 		switch($table){
 		case 'ds_layout_settings':
-			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['id'], $result);
 			break;
 		case 'ds_field_settings':
-			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['id'], $result);
 			break;
 		}
 	}
@@ -225,10 +225,10 @@ if(is_array($fields)){
 		}
 		switch($table){
 		case 'ds_layout_settings':
-			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['view_mode'], $result);
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_layout_settings', $field_values['id'], $result);
 			break;
 		case 'ds_field_settings':
-			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['view_mode'], $result);
+			$this->chaneLog->chanelUpdateChanelog('chanelUpdateMessage', $bundle, 'ds_field_settings', $field_values['id'], $result);
 			break;
 		}
 		return $insert;
@@ -353,7 +353,7 @@ if(is_array($fields)){
 		$result .= '<div>Created '.$results['content_type'].' new Content Types(s). Click '. $path .' to view it.</div>';
 		$result .= '<div>Created '.$results['new_fields'].' new Fields.</div>';
 		$result .= '<div>Updated '.$results['field_instances'].' Field Instances.</div>';
-		$result .= '<div>Created '.$results['view_modes'].' new view modes.</div>';
+		$result .= '<div>Updated '.$results['view_modes'].' new view mode instances.</div>';
 		$result .= '<div>Updated '.$results['ds_updates'].' Display Suite layouts.</div>';
 		$result .= '<div>Created '.$results['ds_settings'].' new Display Suite Layouts and Field Settings.</div>';
 		$result .= '<div>Created '.$results['field_groups'].' new Field Groups.</div>';
