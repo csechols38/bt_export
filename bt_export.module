@@ -243,10 +243,10 @@ function bt_export_ds_view_modes_export($bundle, $field_groups = FALSE){
 	$view_modes['full'] = new StdClass();
 	$view_modes['full']->view_mode = 'full';
 	$view_modes['full']->label = 'Full';
-	$view_modes['search_results'] = array();
-	$view_modes['search_results'] = new StdClass();
-	$view_modes['search_results']->view_mode = 'search_results';
-	$view_modes['search_results']->label = 'Search Results';
+	$view_modes['search_result'] = array();
+	$view_modes['search_result'] = new StdClass();
+	$view_modes['search_result']->view_mode = 'search_result';
+	$view_modes['search_result']->label = 'Search Results';
 	
 	//loop through the view modes and load view mode instances
 	foreach($view_modes as $values){

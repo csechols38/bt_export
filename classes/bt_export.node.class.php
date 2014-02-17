@@ -87,7 +87,7 @@ class BtImportContentType{
 			$new_view_mode = new StdClass;
 			$new_view_mode->view_mode = $properties->view_mode;
 			$new_view_mode->label = $properties->label;
-			$new_view_mode->entities = $properties->entities;
+			$new_view_mode->entities = !empty($properties->entities) ? $properties->entities : NULL;
 			//save the view mode to the database
 			$save_view_mode = drupal_write_record('ds_view_modes', $new_view_mode);
 			switch($save_view_mode){
@@ -120,7 +120,7 @@ class BtImportContentType{
 			foreach($info as $view_mode => $settings){
 				//save the view mode types
 				//create the video mode if it doesnt exists
-				if(!empty($settings->view_mode_properties) && $view_mode != 'full'){
+				if(!empty($settings->view_mode_properties) && $view_mode != 'full' && $view_mode != 'search_result'){
 					$this->saveNodeViewMode($settings->view_mode_properties, $view_mode, $bundle);
 					unset($settings->view_mode_properties);
 				}else{
