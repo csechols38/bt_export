@@ -71,7 +71,8 @@ function bt_export_import($code) {
 				break;
 			case 'custom_fields':
 				$ds_import = new BtExportDsViewModes();
-				$ds_import->importCustomDsFields($code->custom_fields, $code->content_type->machine_name);
+				$custom_field_bundle = !empty($code->content_type->machine_name) ? $code->content_type->machine_name : 'other';
+				$ds_import->importCustomDsFields($code->custom_fields, $custom_field_bundle);
 				$results = array_merge_recursive($results, $ds_import->cleanUp(FALSE));
 			break;
 			}
@@ -80,11 +81,13 @@ function bt_export_import($code) {
 	if(!empty($results)){
 		foreach($results as $bundle_wrapper => &$bundle_children){
 			foreach($bundle_children as $delta => &$messages){
-				$messages = array_unique($messages);
-				if(isset($messages[0])){
-					$value = $messages[0];
-					unset($messages[0]);
-					$messages = $value;
+				if(is_array($messages)){
+					$messages = array_unique($messages);
+					if(isset($messages[0])){
+						$value = $messages[0];
+						unset($messages[0]);
+						$messages = $value;
+					}
 				}
 			}
 		}
@@ -143,8 +146,11 @@ function _bt_export_submit(&$form, &$form_state){
 		//ds view modes
 		if(!empty($form_state['values']['ds_view_modes'])){
 			$export->components['advanced_ds'] = TRUE;
-			_bt_export_node_view_modes($form_state['values']['ds_view_modes'], $export);
-
+			$extract_custom_fields = FALSE;
+			if(!empty($form_state['values']['advanced_ds_custom_fields']['yes'])){
+				$extract_custom_fields = TRUE;
+			}
+			_bt_export_node_view_modes($form_state['values']['ds_view_modes'], $export, $extract_custom_fields);
 		}
 		if(!empty($form_state['values']['ds_custom_fields']['yes'])){
 			if(!empty($export->content_type->machine_name)){
@@ -331,6 +337,28 @@ function bt_export_taxonomy_handler($type = 'vocabularies'){
 
 
 
+
+//function exporting all custom fields for multiple bundles
+function _bt_export_extract_multiple_bundle_custom_fields($settings = array(), &$export){
+	$all_custom_fields = array();
+	$custom_field_per_bundle = array();
+	foreach($settings as $view_mode => $bundles){
+		$custom_field_per_bundle = bt_export_extract_custom_fields($bundles, array($view_mode));
+		if(!empty($all_custom_fields)){
+			$all_custom_fields = array_merge($all_custom_fields, $custom_field_per_bundle);
+		}else{
+			$all_custom_fields = $custom_field_per_bundle;
+		}
+	}
+	if(!empty($all_custom_fields)){
+		$export->components['custom_fields'] = TRUE;
+		$export->custom_fields = array();
+		$export->custom_fields = $all_custom_fields;
+	}
+}
+
+
+
 //function for extracting display suite code fields
 function bt_export_extract_custom_fields($bundles = array(), $view_modes = array()){
 	$custom_fields = array();
@@ -342,12 +370,11 @@ function bt_export_extract_custom_fields($bundles = array(), $view_modes = array
 			foreach($view_modes as $name => $view_mode){
 				// Check on ui_limit.
 				if (isset($field['ui_limit'])) {
-
 					$continue = FALSE;
 					foreach ($field['ui_limit'] as $limitation) {
 						list($limit_bundle, $limit_view_mode) = explode('|', $limitation);
 						if ($limit_bundle == '*' && !in_array($key, $ignore_fields) || $limit_bundle == $bundle && !in_array($key, $ignore_fields)) {
-							$continue = TRUE;
+							//$continue = TRUE;
 							if ($limit_view_mode == '*' || $limit_view_mode == $view_mode) {
 								$continue = TRUE;
 							}
@@ -426,7 +453,7 @@ function _bt_export_content_type(&$form_state, &$export){
 
 
 
-function _bt_export_node_view_modes($modes = array(), &$export){
+function _bt_export_node_view_modes($modes = array(), &$export, $custom_fields = FALSE){
 	$view_modes = array();
 	$ds_view_modes = new StdClass();
 	$extract = FALSE;
@@ -440,7 +467,7 @@ function _bt_export_node_view_modes($modes = array(), &$export){
 		$bundle_type = node_type_get_types();
 		$bundle_type = array_keys($bundle_type);
 		$view_mode_settings = new BtExportDsViewModes();
-		$view_mode_settings->exportViewModes($view_modes, $bundle_type, $export);
+		$view_mode_settings->exportViewModes($view_modes, $bundle_type, $export, $custom_fields);
 	}else{
 		unset($export->components['advanced_ds']);
 	}

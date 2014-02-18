@@ -27,8 +27,9 @@ class BtExportDsViewModes extends BtImportContentType{
 	}
 
 
-	public function exportViewModes($view_modes = array(), $bundles = array(), &$export){
+	public function exportViewModes($view_modes = array(), $bundles = array(), &$export, $extract_custom_fields = FALSE){
 		$this->view_modes = $view_modes;
+		$custom_fields = array();
 		$all_view_modes = ctools_export_crud_load_all('ds_view_modes');
 		foreach($view_modes as $name => $val){
 			$this->view_modes[$name] = array();
@@ -42,6 +43,9 @@ class BtExportDsViewModes extends BtImportContentType{
 				if($this->view_modes[$name][$bundle]['layout_settings']){
 					$this->view_modes[$name][$bundle]['field_settings'] = ds_get_field_settings('node', $bundle, $name);
 					$field_groups = field_group_info_groups('node', $bundle, $name);
+					if($extract_custom_fields){
+						$custom_fields[$name][$bundle] = $bundle;
+					}
 					if(!empty($field_groups)){
 						$this->view_modes[$name][$bundle]['field_groups'] = field_group_info_groups('node', $bundle, $name);
 					}
@@ -49,6 +53,9 @@ class BtExportDsViewModes extends BtImportContentType{
 					unset($this->view_modes[$name][$bundle]);
 				}
 			}
+		}
+		if($extract_custom_fields){
+			_bt_export_extract_multiple_bundle_custom_fields($custom_fields, $export);
 		}
 		$export->advanced_ds = $this->view_modes;
 	}

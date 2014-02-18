@@ -115,7 +115,21 @@ function _bt_export_form($form, &$form_state){
 		'#type' => 'checkboxes',
 		'#options' => $view_modes,
 		'#multiple' => TRUE,
-		'#description' => t('Export all ds settings for each content type using the select view mode.'),
+		'#description' => t('Export all Field Groups, Field Settings and Layout Settings for each node using the selected View Mode(s).'),
+	);
+	//checkbox states
+	$states = array();
+	foreach($view_modes as $name => $value){
+		$states['visible'][] = array(':input[name="ds_view_modes['.$name.']"]' => array('checked' => TRUE));
+	}
+	$form['export_wrapper']['ds_view_modes_fieldsets']['advanced_ds_custom_fields'] = array(
+		'#title' => t('Display Suite Custom Fields'),
+		'#type' => 'checkboxes',
+		'#options' => array(
+			'yes' => 'yes',
+		),
+		'#description' => t('Export Code Fields for selected View Mode(s)'),
+		'#states' => $states,
 	);
 	
 	
